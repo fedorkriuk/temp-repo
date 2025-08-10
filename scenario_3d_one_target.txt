@@ -1,0 +1,73 @@
+# Simple 3D scenario with one target and a 4-drone interceptor pack (proper chase sequence)
+
+[RADAR]
+size = 20000
+center_x = 0
+center_y = 0
+range = 20000
+
+[ENVIRONMENT]
+wind_x = 2.0
+wind_y = -1.0
+wind_z = 0.2
+gravity = 9.81
+air_density = 1.225
+turbulence = 0.1
+
+[TARGETS]
+# id, x, y, z, vx, vy, vz, ...
+# Target speed ≈ 92 m/s (80, 45). It WILL move once /api/step_3d is called.
+target_1, -3000, -1500, 800, 80.0, 45.0, 0.0, 0, 0, 0, 3.0, kamikaze_drone
+
+[INTERCEPTORS]
+# id, x, y, z, vx, vy, vz, ...
+interceptor_a, 800,  800, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_drone
+interceptor_b, 900,  800, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_drone
+interceptor_c, 800,  900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_drone
+interceptor_d, 900,  900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_drone
+
+[PHYSICS]
+# Make greens much faster and more responsive than the red target
+green_max_acceleration = 70.0
+green_max_velocity = 220.0
+
+# Killer remains the most agile
+killer_max_acceleration = 140.0
+killer_max_velocity = 240.0
+killer_deceleration_multiplier = 3.0
+
+# Strike responsiveness
+strike_acceleration_multiplier = 4.5
+
+drag_coefficient = 0.008
+fuel_consumption_rate = 0.12
+
+[AI_PARAMETERS]
+# MUCH LARGER formation distances to force proper chase-follow-form sequence
+pack_formation_distance = 400.0
+pack_activation_distance = 800.0
+
+# Ring orbit behavior for visible formation pattern
+ring_orbit_speed = 30.0
+ring_orbit_direction = 1
+green_speed_margin = 20.0
+
+# Strike distance - small for precise intercept
+strike_distance = 25.0
+
+cooperation_radius = 2000.0
+communication_range = 15000.0
+prediction_horizon = 3.0
+
+[MISSION_PARAMETERS]
+max_engagement_range = 1000.0
+role_switch_distance = 400.0
+
+# Effective strike radius - keep it small for precise kills
+intercept_radius = 25
+
+time_limit = 200
+threat_level = high
+
+required_kill_ratio = 1.0
+mission_success_threshold = 100

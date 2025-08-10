@@ -1,0 +1,76 @@
+# Agile Killer Pack Defense - Scenario-Driven Configuration
+# All physics, AI, and mission parameters defined here
+
+[RADAR]
+size = 15000
+center_x = 0
+center_y = 0
+range = 15000
+
+[ENVIRONMENT]
+wind_x = 3.0
+wind_y = -2.0
+gravity = 9.81
+air_density = 1.225
+turbulence = 0.2
+
+[TARGETS]
+# Fast Shahed swarm - higher speed, evasive maneuvers
+shahed_1, -9000, -5000, 1200, 55.0, 30.0, -1.5, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+shahed_2, -8500, -3000, 1500, 60.0, 35.0, -2.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone  
+shahed_3, -7000, -2000, 1800, 50.0, 40.0, -1.8, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+
+[INTERCEPTORS]
+# Pack defense drones - 4 per target (12 total)
+interceptor_1, 5000, 5000, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_2, 5200, 5000, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_3, 5000, 5200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_4, 5200, 5200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_5, 4800, 5000, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_6, 5000, 4800, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_7, 4800, 4800, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_8, 5400, 5000, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_9, 5000, 5400, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_10, 5400, 5400, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_11, 4700, 5100, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_12, 5100, 4700, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+
+[PHYSICS]
+# Green drone physics (stable formation keepers)
+green_max_acceleration = 35.0
+green_max_velocity = 70.0
+
+# Killer drone physics (agile interceptors)
+killer_max_acceleration = 100.0
+killer_max_velocity = 150.0
+killer_deceleration_multiplier = 2.5
+
+# Strike enhancement
+strike_acceleration_multiplier = 4.0
+
+# General physics
+drag_coefficient = 0.008
+fuel_consumption_rate = 0.15
+
+[AI_PARAMETERS]
+# Pack formation parameters
+pack_formation_distance = 80.0
+pack_activation_distance = 140.0
+strike_distance = 10.0
+
+# Communication and coordination
+cooperation_radius = 1500.0
+communication_range = 12000.0
+prediction_horizon = 2.5
+
+[MISSION_PARAMETERS]
+# Engagement rules
+max_engagement_range = 250.0
+role_switch_distance = 180.0
+intercept_radius = 12
+time_limit = 200
+threat_level = extreme
+
+# Success criteria
+required_kill_ratio = 1.0
+mission_success_threshold = 100

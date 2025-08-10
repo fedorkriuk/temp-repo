@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Agile Killer Pack Defense</title>
+    <style>
+        body { margin: 0; background: #000; color: #00ff00; font-family: monospace; text-align: center; padding: 10px; }
+        #radar { border: 2px solid #00ff00; background: #111; margin: 0 auto; }
+        #controls { margin: 15px; }
+        #startBtn { padding: 15px 30px; background: #004400; color: white; border: none; font-size: 16px; cursor: pointer; }
+        #status { margin: 10px; color: #ffff00; }
+        #legend { margin: 10px; font-size: 12px; color: #aaa; }
+        #info { margin: 10px; font-size: 11px; color: #888; text-align: left; max-width: 1200px; margin: 0 auto; }
+        #debug { margin: 10px; font-size: 10px; color: #666; max-height: 100px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>AGILE KILLER PACK DEFENSE</h1>
+    
+    <!-- LARGER RADAR CANVAS -->
+    <canvas id="radar" width="1200" height="800"></canvas>
+    
+    <div id="controls">
+        <button id="startBtn" onclick="toggleSimulation()">DEPLOY AGILE KILLERS</button>
+    </div>
+    <div id="status">Ready - Agile killers vs stable greens, proper target destruction</div>
+    <div id="legend">RED Targets | GREEN Stable Formation | BLUE Agile Killer | YELLOW Formation Ring</div>
+    <div id="info">
+        <strong>SYSTEM:</strong> Green drones maintain stable formation, Blue killer drones are highly maneuverable with enhanced braking/turning. 
+        Red targets disappear when destroyed. System switches killers automatically on miss detection.
+    </div>
+    <div id="debug" id="debugOutput"></div>
+
+    <script>
+        let canvas = document.getElementById('radar');
+        let ctx = canvas.getContext('2d');
+        let isRunning = false;
+        let targets = [];
+        let interceptors = [];
+        let scenario = null;
+        let scenarioConfig = {};
+        let debugOutput = [];
+
+        // RADAR PARAMETERS FOR LARGER VIEW
+        const SCALE = 0.04;
+        const CENTER_X = 600;
+        const CENTER_Y = 400;
+
+        async function loadScenario() {
+            const response = await fetch('/api/scenario');
+            const data = await response.json();
+            parseScenario(data.scenario);
+            initializeObjects();
+            render();
+            updateStatus('Parallel attack scenario loaded - 4 drones top-left to bottom-right');
+        }
+
+        function parseScenario(content) {
+            const lines = content.split('\n');
+            scenario = { targets: [], interceptors: [] };
+            scenarioConfig = { physics: {}, ai_parameters: {}, mission_parameters: {} };
+            let section = '';
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('#') || !line) return;
+                
+                if (line.startsWith('[') && line.endsWith(']')) {
+                    section = line.slice(1, -1).toLowerCase();
+                    return;
+                }
+
+                if (section === 'physics' || section === 'ai_parameters' || section === 'mission_parameters') {
+                    if (line.includes('=')) {
+                        const [key, value] = line.split('=').map(s => s.trim());
+                        if (!scenarioConfig[section]) scenarioConfig[section] = {};
+                        scenarioConfig[section][key] = value;
+                    }
+                    return;
+                }
+
+                if (section === 'targets') {
+                    const parts = line.split(',').map(p => p.trim());
+                    if (parts.length >= 11) {
+                        scenario.targets.push({
+                            id: parts[0],
+                            x: parseFloat(parts[1]) * SCALE + CENTER_X,
+                            y: parseFloat(parts[2]) * SCALE + CENTER_Y,
+                            z: parseFloat(parts[3]),
+                            vx: parseFloat(parts[4]) * SCALE,
+                            vy: parseFloat(parts[5]) * SCALE,
+                            vz: parseFloat(parts[6]),
+                            type: parts[11] || 'shahed'
+                        });
+                    }
+                } else if (section === 'interceptors') {
+                    const parts = line.split(',').map(p => p.trim());
+                    if (parts.length >= 11) {
+                        scenario.interceptors.push({
+                            id: parts[0],
+                            x: parseFloat(parts[1]) * SCALE + CENTER_X,
+                            y: parseFloat(parts[2]) * SCALE + CENTER_Y,
+                            z: parseFloat(parts[3]),
+                            vx: 0, vy: 0, vz: 0,
+                            type: parts[11] || 'pack_drone'
+                        });
+                    }
+                }
+            });
+        }
+
+        function initializeObjects() {
+            targets = scenario.targets.map(t => ({ ...t, active: true }));
+            interceptors = scenario.interceptors.map(i => ({ ...i, active: true, role: 'unassigned' }));
+            console.log(`Parallel Attack System: ${targets.length} targets flying parallel, ${interceptors.length} interceptors from center`);
+            
+            // Log positions for verification
+            console.log("Target positions (parallel formation):");
+            targets.forEach(target => {
+                console.log(`${target.id}: (${target.x.toFixed(0)}, ${target.y.toFixed(0)}) velocity: (${(target.vx/SCALE).toFixed(1)}, ${(target.vy/SCALE).toFixed(1)})`);
+            });
+            
+            console.log("Interceptor positions (center start):");
+            interceptors.forEach(interceptor => {
+                console.log(`${interceptor.id}: (${interceptor.x.toFixed(0)}, ${interceptor.y.toFixed(0)})`);
+            });
+        }
+
+        async function toggleSimulation() {
+            isRunning = !isRunning;
+            const btn = document.getElementById('startBtn');
+            
+            if (isRunning) {
+                btn.textContent = 'AGILE KILLERS ACTIVE';
+                btn.style.background = '#006600';
+                updateStatus('Agile killers deployed - Blue=killer, Green=formation, parallel attack intercept');
+                simulationLoop();
+            } else {
+                btn.textContent = 'DEPLOY AGILE KILLERS';
+                btn.style.background = '#004400';
+                updateStatus('Mission aborted');
+            }
+        }
+
+        async function simulationLoop() {
+            if (!isRunning) return;
+
+            try {
+                const response = await fetch('/api/ai_update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        targets: targets.filter(t => t.active),
+                        interceptors: interceptors.filter(i => i.active),
+                        dt: 1/30,
+                        wind: { x: 1.0, y: 0.5 },
+                        scenario_config: scenarioConfig
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    console.error('Error:', data.error);
+                    return;
+                }
+                
+                updateObjects(data);
+                applyDecisions(data.decisions);
+                
+            } catch (error) {
+                console.error('Network error:', error);
+            }
+
+            checkMissionStatus();
+            render();
+            setTimeout(simulationLoop, 33);
+        }
+
+        function updateObjects(data) {
+            if (data.updated_targets) {
+                data.updated_targets.forEach(updatedTarget => {
+                    const target = targets.find(t => t.id === updatedTarget.id);
+                    if (target) {
+                        Object.assign(target, updatedTarget);
+                    }
+                });
+            }
+
+            if (data.updated_interceptors) {
+                data.updated_interceptors.forEach(updatedInterceptor => {
+                    const interceptor = interceptors.find(i => i.id === updatedInterceptor.id);
+                    if (interceptor) Object.assign(interceptor, updatedInterceptor);
+                });
+            }
+        }
+
+        function applyDecisions(decisions) {
+            debugOutput = [];
+            
+            for (const [id, decision] of Object.entries(decisions)) {
+                const interceptor = interceptors.find(i => i.id === id);
+                if (interceptor && interceptor.active) {
+                    interceptor.ax = decision.ax;
+                    interceptor.ay = decision.ay;
+                    interceptor.az = decision.az;
+                    interceptor.role = decision.role;
+                    
+                    // Clean debug output - no emojis
+                    debugOutput.push(`${id}(${decision.role}): ${decision.status}`);
+                    
+                    if (decision.status === 'KILL_SUCCESS') {
+                        updateStatus(`KILLER SUCCESS: ${id} destroyed target`);
+                    } else if (decision.status.includes('ATTACK')) {
+                        updateStatus(`KILLER ATTACKING: ${id} engaging target`);
+                    } else if (decision.status === 'target_destroyed') {
+                        updateStatus(`TARGET DESTROYED: Red dot removed from radar`);
+                    }
+                }
+            }
+            
+            // Update debug display
+            document.getElementById('debug').textContent = debugOutput.slice(-10).join(' | ');
+        }
+
+        function checkMissionStatus() {
+            const activeShahedTargets = targets.filter(t => t.active).length;
+            const activePackDrones = interceptors.filter(i => i.active).length;
+            const killers = interceptors.filter(i => i.active && i.role === 'killer').length;
+            const greens = interceptors.filter(i => i.active && i.role === 'green').length;
+            
+            if (activeShahedTargets === 0) {
+                updateStatus('MISSION SUCCESS: All parallel targets destroyed');
+                isRunning = false;
+                document.getElementById('startBtn').textContent = 'MISSION COMPLETE';
+                document.getElementById('startBtn').style.background = '#006600';
+            } else if (activePackDrones === 0) {
+                updateStatus('MISSION FAILED: All interceptor drones lost');
+                isRunning = false;
+            }
+            
+            // Update legend with current counts
+            document.getElementById('legend').textContent = 
+                `RED Targets (${activeShahedTargets}) | GREEN Stable (${greens}) | BLUE Killer (${killers}) | YELLOW Formation`;
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, 1200, 800);
+            
+            // Draw radar grid
+            ctx.strokeStyle = '#003300';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < 1200; x += 120) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 800);
+                ctx.stroke();
+            }
+            for (let y = 0; y < 800; y += 100) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(1200, y);
+                ctx.stroke();
+            }
+            
+            // Draw center crosshair
+            ctx.strokeStyle = '#006600';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(CENTER_X - 20, CENTER_Y);
+            ctx.lineTo(CENTER_X + 20, CENTER_Y);
+            ctx.moveTo(CENTER_X, CENTER_Y - 15);
+            ctx.lineTo(CENTER_X, CENTER_Y + 15);
+            ctx.stroke();
+            
+            // Draw formation circles around ACTIVE targets only
+            targets.forEach(target => {
+                if (!target.active) return;
+                
+                // Formation circle (yellow)
+                ctx.strokeStyle = '#ffff0040';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, 75 * SCALE, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Strike distance (red circle)
+                ctx.strokeStyle = '#ff000080';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, 12 * SCALE, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Activation circle (orange)
+                ctx.strokeStyle = '#ff880020';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, 130 * SCALE, 0, Math.PI * 2);
+                ctx.stroke();
+            });
+
+            // Draw parallel trajectory lines for targets
+            targets.forEach(target => {
+                if (!target.active) return;
+                
+                // Draw trajectory line showing parallel movement
+                ctx.strokeStyle = '#ff000020';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(target.x - target.vx * 20, target.y - target.vy * 20);
+                ctx.lineTo(target.x + target.vx * 20, target.y + target.vy * 20);
+                ctx.stroke();
+            });
+
+            // Draw Shahed targets - ONLY ACTIVE ONES
+            targets.forEach(target => {
+                if (!target.active) return;
+                
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, 12, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.strokeStyle = '#ff4444';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(target.x, target.y, 12, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // Target labels
+                ctx.fillStyle = '#ffaaaa';
+                ctx.font = '12px monospace';
+                ctx.fillText(`${target.id}`, target.x + 18, target.y + 5);
+            });
+
+            // Draw interceptor drones with role colors
+            interceptors.forEach(interceptor => {
+                if (!interceptor.active) return;
+                
+                // Color by role
+                let color = '#00ff00';  // Default green
+                let size = 8;
+                
+                if (interceptor.role === 'killer') {
+                    color = '#0066ff';  // BLUE for killer (agile)
+                    size = 10;
+                } else if (interceptor.role === 'green') {
+                    color = '#00ff00';  // GREEN for formation (stable)
+                    size = 8;
+                } else {
+                    color = '#888888';  // Gray for unassigned
+                    size = 6;
+                }
+                
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(interceptor.x, interceptor.y, size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Show velocity vector
+                const speed = Math.sqrt((interceptor.vx || 0)**2 + (interceptor.vy || 0)**2);
+                if (speed > 0.5) {
+                    const isKiller = interceptor.role === 'killer';
+                    ctx.strokeStyle = isKiller ? '#0066ff80' : '#00ff0080';
+                    ctx.lineWidth = isKiller ? 4 : 3;
+                    ctx.beginPath();
+                    ctx.moveTo(interceptor.x, interceptor.y);
+                    ctx.lineTo(interceptor.x + interceptor.vx * 8, interceptor.y + interceptor.vy * 8);
+                    ctx.stroke();
+                }
+                
+                // Drone labels
+                const roleSymbol = interceptor.role === 'killer' ? 'K' : (interceptor.role === 'green' ? 'G' : '?');
+                ctx.fillStyle = '#aaddff';
+                ctx.font = '10px monospace';
+                ctx.fillText(`${roleSymbol}${interceptor.id.slice(-2)}`, interceptor.x + 12, interceptor.y + 4);
+            });
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            console.log(message);
+        }
+
+        loadScenario();
+    </script>
+</body>
+</html>

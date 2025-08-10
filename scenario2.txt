@@ -1,0 +1,86 @@
+# Urban High-Density Defense - Multiple Threat Vectors
+# Challenging scenario with 5 targets and tighter formations
+
+[RADAR]
+size = 12000
+center_x = 0
+center_y = 0
+range = 12000
+
+[ENVIRONMENT]
+wind_x = 5.0
+wind_y = -3.5
+gravity = 9.81
+air_density = 1.3
+turbulence = 0.4
+
+[TARGETS]
+# Dense urban attack - 5 Shahed drones from multiple directions
+shahed_alpha, -6000, -6000, 1000, 65.0, 45.0, -1.2, 0.0, 0.0, 0.0, 2.8, kamikaze_drone
+shahed_beta, -7000, 2000, 1400, 70.0, -30.0, -1.8, 0.0, 0.0, 0.0, 2.8, kamikaze_drone
+shahed_gamma, 1000, -7500, 1600, -25.0, 55.0, -2.2, 0.0, 0.0, 0.0, 2.8, kamikaze_drone
+shahed_delta, 8000, -1000, 1200, -60.0, 25.0, -1.5, 0.0, 0.0, 0.0, 2.8, kamikaze_drone
+shahed_echo, -2000, 8000, 1800, 40.0, -65.0, -2.5, 0.0, 0.0, 0.0, 2.8, kamikaze_drone
+
+[INTERCEPTORS]
+# Urban defense grid - 20 drones (4 per target)
+interceptor_01, 2000, 2000, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_02, 2200, 2000, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_03, 2000, 2200, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_04, 2200, 2200, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_05, 1800, 2000, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_06, 2000, 1800, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_07, 1800, 1800, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_08, 2400, 2000, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_09, 2000, 2400, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_10, 2400, 2400, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_11, 1700, 2100, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_12, 2100, 1700, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_13, 1600, 2000, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_14, 2000, 1600, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_15, 1600, 1600, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_16, 2600, 2000, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_17, 2000, 2600, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_18, 2600, 2600, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_19, 1500, 2300, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+interceptor_20, 2300, 1500, 2200, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.8, urban_defender
+
+[PHYSICS]
+# Urban defense physics - tighter, more responsive
+green_max_acceleration = 45.0
+green_max_velocity = 85.0
+
+# Urban killer physics - extremely agile for city environment
+killer_max_acceleration = 120.0
+killer_max_velocity = 180.0
+killer_deceleration_multiplier = 3.0
+
+# Urban strike enhancement
+strike_acceleration_multiplier = 5.0
+
+# Urban physics constraints
+drag_coefficient = 0.012
+fuel_consumption_rate = 0.2
+
+[AI_PARAMETERS]
+# Tight urban formation
+pack_formation_distance = 60.0
+pack_activation_distance = 100.0
+strike_distance = 8.0
+
+# Urban communication
+cooperation_radius = 800.0
+communication_range = 8000.0
+prediction_horizon = 1.8
+
+[MISSION_PARAMETERS]
+# Urban engagement rules
+max_engagement_range = 200.0
+role_switch_distance = 120.0
+intercept_radius = 10
+time_limit = 150
+threat_level = critical
+
+# Urban success criteria
+required_kill_ratio = 1.0
+mission_success_threshold = 100

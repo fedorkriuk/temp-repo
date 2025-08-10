@@ -1,0 +1,103 @@
+# Complex 4 Drone Attack - Varied Speeds and Positions
+# Based on scenario3 framework with challenging variations
+
+[RADAR]
+size = 15000
+center_x = 0
+center_y = 0
+range = 15000
+
+[ENVIRONMENT]
+wind_x = 1.0
+wind_y = 0.5
+gravity = 9.81
+air_density = 1.225
+turbulence = 0.1
+
+[TARGETS]
+# Complex 4-drone attack with varied speeds and approach vectors
+# Target 1: Very fast from far top-left
+shahed_alpha, -12000, 8000, 1500, 85.0, -55.0, -1.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+
+# Target 2: Slow but close from top-right
+shahed_beta, 9000, 7000, 1500, 25.0, -30.0, -1.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+
+# Target 3: Medium speed diagonal from bottom-left  
+shahed_gamma, -10000, -6000, 1500, 60.0, 45.0, -1.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+
+# Target 4: Very fast but erratic from right side
+shahed_delta, 11000, 2000, 1500, -75.0, -20.0, -1.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+
+[INTERCEPTORS]
+# 16 interceptor drones with varied starting positions (not all center)
+# Central cluster (8 drones)
+interceptor_01, 0, 0, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_02, 200, 0, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_03, 0, 200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_04, 200, 200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_05, -200, 0, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_06, 0, -200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_07, -200, -200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_08, 400, 400, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+
+# Northern advance position (2 drones) - to counter fast northern target
+interceptor_09, -1000, 2000, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_10, -800, 2200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+
+# Eastern advance position (2 drones) - to counter close eastern target
+interceptor_11, 1500, 1000, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_12, 1700, 800, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+
+# Southern position (2 drones) - to counter southern approach
+interceptor_13, -500, -1500, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_14, -300, -1300, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+
+# Western position (2 drones) - to counter fast western target
+interceptor_15, 2000, 500, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_16, 2200, 300, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+
+[PHYSICS]
+# Green drone physics (stable formation keepers)
+green_max_acceleration = 40.0
+green_max_velocity = 80.0
+
+# Killer drone physics (agile interceptors)
+killer_max_acceleration = 120.0
+killer_max_velocity = 160.0
+killer_deceleration_multiplier = 2.0
+
+# Strike enhancement
+strike_acceleration_multiplier = 3.5
+
+# General physics
+drag_coefficient = 0.006
+fuel_consumption_rate = 0.12
+
+[AI_PARAMETERS]
+# Pack formation parameters
+pack_formation_distance = 75.0
+pack_activation_distance = 130.0
+strike_distance = 12.0
+
+# Miss detection parameters
+killer_lock_distance = 180.0
+miss_detection_samples = 4
+miss_distance_threshold = 20.0
+min_attack_distance = 45.0
+
+# Communication and coordination
+cooperation_radius = 1200.0
+communication_range = 10000.0
+prediction_horizon = 2.0
+
+[MISSION_PARAMETERS]
+# Engagement rules
+max_engagement_range = 300.0
+role_switch_distance = 150.0
+intercept_radius = 15
+time_limit = 180
+threat_level = high
+
+# Success criteria
+required_kill_ratio = 1.0
+mission_success_threshold = 100

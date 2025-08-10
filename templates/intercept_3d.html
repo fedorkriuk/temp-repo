@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>3D Interception Viewer</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --fg: #cfe9ff;
+    --accent: #2aa5ff;
+    --accent2: #85ff2a;
+    --warn: #ff5252;
+    --grid: #203040;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    height: 100%;
+    overflow: hidden;
+  }
+  #wrap {
+    position: fixed; inset: 0;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+  header, footer {
+    padding: 8px 10px;
+    background: rgba(12,18,26,0.8);
+    backdrop-filter: blur(4px);
+    border-bottom: 1px solid #0e1a24;
+  }
+  footer {
+    border-top: 1px solid #0e1a24;
+    border-bottom: none;
+  }
+  #toolbar {
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  }
+  button, select {
+    appearance: none;
+    border: 1px solid #2a3c4d;
+    background: #0f1820;
+    color: var(--fg);
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:hover { background: #132131; }
+  button:active { background: #0f1b28; }
+  .btn-primary { border-color: var(--accent); color: #dff3ff; }
+  .btn-danger { border-color: var(--warn); color: #ffe7e7; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 999px;
+    background: #0a1520; border: 1px solid #1a2a36; color: #a9c7de;
+    font-size: 12px;
+  }
+  #canvasWrap {
+    position: relative; width: 100%; height: 100%;
+  }
+  #view {
+    width: 100%; height: 100%;
+    display: block; outline: none; background: radial-gradient(1200px 800px at 50% 70%, #0b1118 0%, #0a0f15 60%, #060a0f 100%);
+  }
+  #hud {
+    position: absolute; left: 10px; top: 10px; right: 10px;
+    display: flex; gap: 10px; flex-wrap: wrap; pointer-events: none;
+  }
+  .hud-card {
+    pointer-events: auto;
+    background: rgba(10,16,22,0.75);
+    border: 1px solid #132434;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; }
+  .dot-target { background: var(--warn); box-shadow: 0 0 6px #ff5252; }
+  .dot-killer { background: #2a7bff; box-shadow: 0 0 6px #2a7bff; }
+  .dot-green  { background: #4dff4d; box-shadow: 0 0 6px #4dff4d; }
+  .dot-strike { background: #ffcc00; }
+  .kvd { color: #8fbbe0; }
+  .val { color: #e6f5ff; }
+  .mono { font-variant-ligatures: none; }
+
+  @media (max-width: 700px) {
+    header, footer { font-size: 12px; }
+    button { padding: 6px 8px; font-size: 12px; }
+    .hud-card { font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header>
+    <div id="toolbar">
+      <button class="btn-primary" id="btnStart">Start 3D Scenario</button>
+      <button id="btnPause">Pause</button>
+      <button id="btnResume">Resume</button>
+      <button id="btnReset" class="btn-danger">Reset</button>
+      <span class="pill">Scenario: <strong class="mono" id="scenarioName">scenario_3d_one_target.txt</strong></span>
+      <span class="pill">FPS: <strong id="fps">0</strong></span>
+      <span class="pill">Camera: drag = orbit, wheel = zoom</span>
+    </div>
+  </header>
+
+  <div id="canvasWrap">
+    <canvas id="view" tabindex="0" aria-label="3D interception view"></canvas>
+    <div id="hud">
+      <div class="hud-card">
+        <div><span class="legend-dot dot-target"></span>Target</div>
+        <div><span class="legend-dot dot-killer"></span>Killer</div>
+        <div><span class="legend-dot dot-green"></span>Formation</div>
+      </div>
+      <div class="hud-card">
+        <div class="mono"><span class="kvd">Objects:</span> <span class="val" id="objCount">0</span></div>
+        <div class="mono"><span class="kvd">Active targets:</span> <span class="val" id="tCount">0</span></div>
+        <div class="mono"><span class="kvd">Active interceptors:</span> <span class="val" id="iCount">0</span></div>
+        <div class="mono"><span class="kvd">Status:</span> <span class="val" id="status">ready</span></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Agile Killer Pack Defense • 3D Interception Viewer • Software 3D renderer (no external libs)
+  </footer>
+</div>
+
+<script>
+const canvas = document.getElementById('view');
+const ctx = canvas.getContext('2d');
+
+const state = {
+  running: false,
+  scenario: 'scenario_3d_one_target.txt',
+  lastTime: performance.now(),
+  accTime: 0,
+  stepDt: 1/30,
+  cam: {
+    dist: 6500,
+    yaw: Math.PI * 0.15,
+    pitch: Math.PI * 0.10,
+    target: {x: 0, y: 0, z: 600},
+    fovDeg: 60
+  },
+  trails: new Map(),
+  maxTrail: 150,
+  fpsCounter: { frames:0, last: performance.now(), fps:0 }
+};
+
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(canvas.clientWidth * dpr);
+  canvas.height = Math.floor(canvas.clientHeight * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+}
+new ResizeObserver(resize).observe(canvas);
+resize();
+
+/* Vector helpers */
+function vAdd(a,b){ return {x:a.x+b.x, y:a.y+b.y, z:a.z+b.z}; }
+function vSub(a,b){ return {x:a.x-b.x, y:a.y-b.y, z:a.z-b.z}; }
+function vScale(a,s){ return {x:a.x*s, y:a.y*s, z:a.z*s}; }
+function vDot(a,b){ return a.x*b.x + a.y*b.y + a.z*b.z; }
+function vCross(a,b){ return {x:a.y*b.z - a.z*b.y, y:a.z*b.x - a.x*b.z, z:a.x*b.y - a.y*b.x}; }
+function vLen(a){ return Math.hypot(a.x,a.y,a.z); }
+function vNorm(a){ const L=vLen(a)||1; return vScale(a,1/L); }
+
+/* Camera basis */
+function getCamera() {
+  const {dist,yaw,pitch,target,fovDeg} = state.cam;
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const eye = {
+    x: target.x + dist * (cp * Math.sin(yaw)),
+    y: target.y + dist * (sp),
+    z: target.z + dist * (cp * Math.cos(yaw))
+  };
+  const forward = vNorm(vSub(target, eye));
+  const worldUp = {x:0, y:1, z:0};
+  let right = vNorm(vCross(forward, worldUp));
+  let up = vCross(right, forward);
+
+  const fov = fovDeg * Math.PI/180;
+  const cssH = canvas.clientHeight || 1;
+  const focal = 0.5 * cssH / Math.tan(fov/2); // use CSS height
+
+  return {eye, target, forward, right, up, focal};
+}
+
+/* Project a world point to screen (CSS pixel coords) */
+function project(p, cam) {
+  const v = vSub(p, cam.eye);
+  const x = vDot(v, cam.right);
+  const y = vDot(v, cam.up);
+  const z = vDot(v, cam.forward);
+  const near = 1;
+  if (z < near) return {visible:false};
+  const cssW = canvas.clientWidth;
+  const cssH = canvas.clientHeight;
+  const sx = (x * cam.focal) / z + cssW/2;
+  const sy = (-y * cam.focal) / z + cssH/2;
+  return {visible:true, x:sx, y:sy, z};
+}
+
+function drawGrid(cam) {
+  const size = 12000, step = 1000;
+  ctx.lineWidth = 1;
+  for (let x = -size; x <= size; x += step) {
+    const a = project({x, y:0, z:-size}, cam);
+    const b = project({x, y:0, z:size}, cam);
+    if (a.visible && b.visible) {
+      ctx.strokeStyle = '#1c2b3a';
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+  }
+  for (let z = -size; z <= size; z += step) {
+    const a = project({x:-size, y:0, z}, cam);
+    const b = project({x:size,  y:0, z}, cam);
+    if (a.visible && b.visible) {
+      ctx.strokeStyle = '#162433';
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    }
+  }
+  const axes = [
+    {a:{x:0,y:0,z:0}, b:{x:2000,y:0,z:0}, c:'#2aa5ff'},
+    {a:{x:0,y:0,z:0}, b:{x:0,y:2000,z:0}, c:'#85ff2a'},
+    {a:{x:0,y:0,z:0}, b:{x:0,y:0,z:2000}, c:'#ffaa2a'}
+  ];
+  axes.forEach(l => drawLine3D(l.a, l.b, l.c, 2, cam));
+}
+function drawLine3D(a,b,color,width,cam) {
+  const pa = project(a, cam), pb = project(b, cam);
+  if (!pa.visible || !pb.visible) return;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
+}
+function drawSphere(p, radiusMeters, color, cam, glow=0) {
+  const pr = project(p, cam);
+  if (!pr.visible) return;
+  const R = (radiusMeters * cam.focal) / pr.z;
+  if (R < 1) return;
+  const grd = ctx.createRadialGradient(pr.x - R*0.35, pr.y - R*0.35, R*0.15, pr.x, pr.y, R);
+  grd.addColorStop(0, lighten(color, 0.25));
+  grd.addColorStop(1, color);
+  ctx.fillStyle = grd;
+  ctx.beginPath(); ctx.arc(pr.x, pr.y, R, 0, Math.PI*2); ctx.closePath(); ctx.fill();
+  if (glow > 0) {
+    ctx.strokeStyle = color + '80';
+    ctx.lineWidth = Math.max(1, R*0.1);
+    ctx.beginPath(); ctx.arc(pr.x, pr.y, R+glow, 0, Math.PI*2); ctx.stroke();
+  }
+}
+function drawBubble(p, radiusMeters, color, cam) {
+  const pr = project(p, cam);
+  if (!pr.visible) return;
+  const R = (radiusMeters * cam.focal) / pr.z;
+  if (R < 2) return;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(pr.x, pr.y, R, 0, Math.PI*2); ctx.stroke();
+}
+function drawVelocity(p, v, color, cam) {
+  const speed = Math.hypot(v.x||0, v.y||0, v.z||0);
+  if (speed < 1) return;
+  const tip = { x: p.x + v.x*2, y: p.y + v.y*2, z: p.z + v.z*2 };
+  drawLine3D(p, tip, color, 2, cam);
+}
+function hexToRgb(hex) {
+  const h = hex.replace('#','');
+  const bigint = parseInt(h, 16);
+  if (h.length === 6) return {r:(bigint>>16)&255, g:(bigint>>8)&255, b:bigint&255};
+  return {r:255,g:255,b:255};
+}
+function lighten(hex, amt) {
+  const {r,g,b} = hexToRgb(hex);
+  const L = (x)=>Math.max(0, Math.min(255, Math.round(x + 255*amt)));
+  return `rgb(${L(r)},${L(g)},${L(b)})`;
+}
+
+/* Explosions */
+const explosions = [];
+function spawnExplosion(pos, baseColor='#ffcc33') {
+  const N = 90;
+  const particles = [];
+  for (let i=0;i<N;i++){
+    const theta = Math.acos(2*Math.random()-1);
+    const phi = 2*Math.PI*Math.random();
+    const speed = 200 + 400*Math.random(); // m/s visualized
+    const vx = speed * Math.sin(theta)*Math.cos(phi);
+    const vy = speed * Math.sin(theta)*Math.sin(phi);
+    const vz = speed * Math.cos(theta);
+    particles.push({
+      x: pos.x, y: pos.y, z: pos.z,
+      vx, vy, vz,
+      life: 0, maxLife: 1.3 + Math.random()*0.5,
+      size: 60 + Math.random()*40,
+      color: baseColor
+    });
+  }
+  explosions.push({
+    particles,
+    shock: {r: 0, vr: 800, alpha: 1.0, decay: 1.8, color: baseColor},
+    alive: true
+  });
+}
+function updateExplosions(dt) {
+  const drag = 0.85;
+  for (const ex of explosions) {
+    ex.alive = false;
+    // shockwave
+    if (ex.shock.alpha > 0) {
+      ex.shock.r += ex.shock.vr * dt;
+      ex.shock.alpha -= ex.shock.decay * dt;
+      if (ex.shock.alpha < 0) ex.shock.alpha = 0;
+      if (ex.shock.alpha > 0) ex.alive = true;
+    }
+    // particles
+    for (const p of ex.particles) {
+      if (p.life >= p.maxLife) continue;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.z += p.vz * dt;
+      p.vx *= Math.pow(drag, dt*30);
+      p.vy *= Math.pow(drag, dt*30);
+      p.vz *= Math.pow(drag, dt*30);
+      p.life += dt;
+      if (p.life < p.maxLife) ex.alive = true;
+    }
+  }
+  // prune
+  for (let i=explosions.length-1;i>=0;i--) {
+    if (!explosions[i].alive) explosions.splice(i,1);
+  }
+}
+function drawExplosions(cam) {
+  for (const ex of explosions) {
+    // shockwave ring
+    if (ex.shock.alpha > 0) {
+      const p0 = ex.particles[0];
+      const pr = project({x:p0.x,y:p0.y,z:p0.z}, cam);
+      if (pr.visible) {
+        const R = (ex.shock.r * cam.focal) / pr.z;
+        ctx.strokeStyle = `rgba(255,200,80,${ex.shock.alpha.toFixed(3)})`;
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(pr.x, pr.y, R, 0, Math.PI*2); ctx.stroke();
+      }
+    }
+    // particles
+    for (const p of ex.particles) {
+      const pr = project({x:p.x,y:p.y,z:p.z}, cam);
+      if (!pr.visible) continue;
+      const k = 1 - Math.min(1, p.life / p.maxLife);
+      const R = ((p.size * k) * cam.focal) / pr.z;
+      if (R < 0.5) continue;
+      const col = hexToRgb(p.color);
+      ctx.fillStyle = `rgba(${Math.min(255, col.r+60)},${Math.min(255, col.g+40)},${col.b},${Math.max(0.05, k)})`;
+      ctx.beginPath(); ctx.arc(pr.x, pr.y, R, 0, Math.PI*2); ctx.fill();
+    }
+  }
+}
+
+/* Simulation I/O */
+async function startScenario() {
+  const res = await fetch('/api/start_3d', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ scenario: state.scenario })
+  });
+  const j = await res.json();
+  if (j.error) throw new Error(j.error);
+  document.getElementById('scenarioName').textContent = state.scenario;
+  centerCamera(j.targets, j.interceptors);
+  document.getElementById('status').textContent = 'running';
+  state.running = true;
+  return j;
+}
+async function stepScenario(dt) {
+  const res = await fetch('/api/step_3d', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ n: 1, dt })
+  });
+  const j = await res.json();
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+function centerCamera(targets, interceptors) {
+  const pts = [...targets, ...interceptors].filter(o=>o.active!==false);
+  if (!pts.length) return;
+  let cx=0,cy=0,cz=0;
+  pts.forEach(p=>{ cx+=p.x; cy+=p.y; cz+=p.z; });
+  cx/=pts.length; cy/=pts.length; cz/=pts.length;
+  state.cam.target = {x:cx, y:cy, z:cz};
+}
+
+/* Trails */
+function pushTrail(id, p) {
+  if (!state.trails.has(id)) state.trails.set(id, []);
+  const t = state.trails.get(id);
+  t.push({x:p.x,y:p.y,z:p.z});
+  if (t.length > state.maxTrail) t.shift();
+}
+function drawTrail(id, color, cam) {
+  const t = state.trails.get(id);
+  if (!t || t.length < 2) return;
+  ctx.strokeStyle = color + '66';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  let first = true;
+  for (let i=0; i<t.length; i++) {
+    const pr = project(t[i], cam);
+    if (!pr.visible) continue;
+    if (first) { ctx.moveTo(pr.x, pr.y); first=false; }
+    else ctx.lineTo(pr.x, pr.y);
+  }
+  ctx.stroke();
+}
+
+/* Interaction */
+let dragging = false, prevX=0, prevY=0;
+canvas.addEventListener('mousedown', e => {
+  dragging = true; prevX=e.clientX; prevY=e.clientY; canvas.focus();
+});
+window.addEventListener('mouseup', ()=>dragging=false);
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - prevX;
+  const dy = e.clientY - prevY;
+  prevX = e.clientX; prevY = e.clientY;
+  state.cam.yaw -= dx * 0.005;
+  state.cam.pitch -= dy * 0.003;
+  const clamp = (v,min,max)=>Math.max(min,Math.min(max,v));
+  state.cam.pitch = clamp(state.cam.pitch, -Math.PI*0.49, Math.PI*0.49);
+});
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = Math.pow(1.1, e.deltaY/100);
+  state.cam.dist = Math.max(500, Math.min(50000, state.cam.dist*factor));
+},{passive:false});
+
+/* Buttons */
+document.getElementById('btnStart').onclick = async () => {
+  try {
+    await startScenario();
+  } catch (e) {
+    document.getElementById('status').textContent = 'error: ' + e.message;
+  }
+};
+document.getElementById('btnPause').onclick = ()=>{ state.running = false; document.getElementById('status').textContent='paused'; };
+document.getElementById('btnResume').onclick = ()=>{ state.running = true; document.getElementById('status').textContent='running'; };
+document.getElementById('btnReset').onclick = async ()=>{
+  state.trails.clear();
+  explosions.length = 0;
+  try {
+    await startScenario();
+  } catch (e) {
+    document.getElementById('status').textContent = 'error: ' + e.message;
+  }
+};
+
+/* Main loop */
+let simTargets = [], simInterceptors = [];
+let prevActiveTargets = new Map();
+let prevActiveInterceptors = new Map();
+
+function updateHUD() {
+  const tCount = simTargets.filter(t=>t.active!==false).length;
+  const iCount = simInterceptors.filter(i=>i.active!==false).length;
+  document.getElementById('tCount').textContent = tCount;
+  document.getElementById('iCount').textContent = iCount;
+  document.getElementById('objCount').textContent = tCount + iCount;
+}
+function detectEvents(oldTargets, oldInterceptors, newTargets, newInterceptors) {
+  // Build maps
+  const oldT = new Map(oldTargets.map(o=>[o.id, o]));
+  const newT = new Map(newTargets.map(o=>[o.id, o]));
+  // target destroyed -> explosion
+  for (const [id, oOld] of oldT.entries()) {
+    const oNew = newT.get(id);
+    if (!oNew) continue;
+    const wasActive = oOld.active !== false;
+    const isActive = oNew.active !== false;
+    if (wasActive && !isActive) {
+      spawnExplosion({x:oOld.x, y:oOld.y, z:oOld.z}, '#ff9933');
+    }
+  }
+  // Also handle interceptor kill (optional flash)
+  const oldI = new Map(oldInterceptors.map(o=>[o.id, o]));
+  const newI = new Map(newInterceptors.map(o=>[o.id, o]));
+  for (const [id, oOld] of oldI.entries()) {
+    const oNew = newI.get(id);
+    if (!oNew) continue;
+    const wasActive = oOld.active !== false;
+    const isActive = oNew.active !== false;
+    if (wasActive && !isActive) {
+      spawnExplosion({x:oOld.x, y:oOld.y, z:oOld.z}, '#66ccff');
+    }
+  }
+}
+
+function tick() {
+  const now = performance.now();
+  const dtSec = (now - state.lastTime) / 1000;
+  state.lastTime = now;
+
+  state.fpsCounter.frames++;
+  if (now - state.fpsCounter.last >= 500) {
+    state.fpsCounter.fps = Math.round((state.fpsCounter.frames * 1000) / (now - state.fpsCounter.last));
+    state.fpsCounter.frames = 0;
+    state.fpsCounter.last = now;
+    document.getElementById('fps').textContent = state.fpsCounter.fps;
+  }
+
+  state.accTime += dtSec;
+  const stepDt = state.stepDt;
+
+  const runStep = async () => {
+    try {
+      const oldTargets = simTargets.map(o=>({...o}));
+      const oldInterceptors = simInterceptors.map(o=>({...o}));
+
+      const r = await stepScenario(stepDt);
+      simTargets = r.targets || simTargets;
+      simInterceptors = r.interceptors || simInterceptors;
+
+      detectEvents(oldTargets, oldInterceptors, simTargets, simInterceptors);
+
+      simTargets.forEach(t => { if (t.active!==false) pushTrail(t.id, t); });
+      simInterceptors.forEach(d => { if (d.active!==false) pushTrail(d.id, d); });
+      centerCamera(simTargets.filter(t=>t.active!==false), simInterceptors.filter(i=>i.active!==false));
+      updateHUD();
+    } catch (e) { /* ignore before start */ }
+  };
+
+  if (state.running) {
+    while (state.accTime >= stepDt) {
+      state.accTime -= stepDt;
+      runStep();
+    }
+  }
+
+  updateExplosions(dtSec);
+  render();
+  requestAnimationFrame(tick);
+}
+
+/* Render */
+function render() {
+  ctx.clearRect(0,0,canvas.clientWidth,canvas.clientHeight);
+  const cam = getCamera();
+
+  drawGrid(cam);
+
+  simTargets.forEach(t => {
+    if (t.active===false) return;
+    drawBubble(t, 12, '#ffcc0090', cam);
+  });
+
+  simTargets.forEach(t => drawTrail(t.id, '#ff5252', cam));
+  simInterceptors.forEach(d => {
+    const isKiller = d.role === 'killer';
+    drawTrail(d.id, isKiller ? '#2a7bff' : '#4dff4d', cam);
+  });
+
+  const items = [];
+  simTargets.forEach(t => items.push({obj:t, type:'target'}));
+  simInterceptors.forEach(d => items.push({obj:d, type:'interceptor'}));
+  const withDepth = items.map(it => {
+    const pr = project(it.obj, cam);
+    return {...it, z: pr.visible ? pr.z : Infinity, visible: pr.visible};
+  }).filter(it => it.visible);
+  withDepth.sort((a,b)=>b.z - a.z);
+
+  withDepth.forEach(it => {
+    const o = it.obj;
+    if (it.type === 'target') {
+      drawSphere(o, 120, '#ff5252', cam, 0);
+      drawVelocity(o, {x:o.vx||0, y:o.vy||0, z:o.vz||0}, '#ffb3b3', cam);
+    } else {
+      const isKiller = o.role === 'killer';
+      const color = isKiller ? '#2a7bff' : '#4dff4d';
+      drawSphere(o, isKiller ? 90 : 70, color, cam, 0);
+      drawVelocity(o, {x:o.vx||0, y:o.vy||0, z:o.vz||0}, isKiller ? '#9bc4ff' : '#b9ffb9', cam);
+    }
+  });
+
+  // Explosions on top
+  drawExplosions(cam);
+}
+
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

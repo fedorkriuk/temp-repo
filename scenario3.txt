@@ -1,0 +1,87 @@
+# Clean 4 Drone Parallel Attack - Top Left to Bottom Right
+# Simple parallel formation attack scenario
+
+[RADAR]
+size = 15000
+center_x = 0
+center_y = 0
+range = 15000
+
+[ENVIRONMENT]
+wind_x = 1.0
+wind_y = 0.5
+gravity = 9.81
+air_density = 1.225
+turbulence = 0.1
+
+[TARGETS]
+# 4 Shahed drones in parallel formation from top-left to bottom-right
+drone_alpha, -8000, 6000, 1500, 40.0, -35.0, -1.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+drone_beta, -7500, 5500, 1500, 40.0, -35.0, -1.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+drone_gamma, -7000, 5000, 1500, 40.0, -35.0, -1.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+drone_delta, -6500, 4500, 1500, 40.0, -35.0, -1.0, 0.0, 0.0, 0.0, 3.0, kamikaze_drone
+
+[INTERCEPTORS]
+# 16 interceptor drones starting from center (4 per target)
+interceptor_01, 0, 0, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_02, 100, 0, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_03, 0, 100, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_04, 100, 100, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_05, 200, 0, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_06, 0, 200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_07, 200, 200, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_08, 300, 0, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_09, 0, 300, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_10, 300, 300, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_11, 150, 150, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_12, 250, 150, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_13, 150, 250, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_14, 250, 250, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_15, 50, 50, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+interceptor_16, 350, 350, 2000, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, pack_drone
+
+[PHYSICS]
+# Green drone physics (stable formation keepers)
+green_max_acceleration = 40.0
+green_max_velocity = 80.0
+
+# Killer drone physics (agile interceptors)
+killer_max_acceleration = 120.0
+killer_max_velocity = 160.0
+killer_deceleration_multiplier = 2.0
+
+# Strike enhancement
+strike_acceleration_multiplier = 3.5
+
+# General physics
+drag_coefficient = 0.006
+fuel_consumption_rate = 0.12
+
+[AI_PARAMETERS]
+# Pack formation parameters
+pack_formation_distance = 75.0
+pack_activation_distance = 130.0
+strike_distance = 12.0
+
+# Miss detection parameters
+killer_lock_distance = 180.0
+miss_detection_samples = 4
+miss_distance_threshold = 20.0
+min_attack_distance = 45.0
+
+# Communication and coordination
+cooperation_radius = 1200.0
+communication_range = 10000.0
+prediction_horizon = 2.0
+
+[MISSION_PARAMETERS]
+# Engagement rules
+max_engagement_range = 300.0
+role_switch_distance = 150.0
+intercept_radius = 15
+time_limit = 180
+threat_level = high
+
+# Success criteria
+required_kill_ratio = 1.0
+mission_success_threshold = 100
