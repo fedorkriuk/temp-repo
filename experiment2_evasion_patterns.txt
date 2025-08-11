@@ -1,0 +1,111 @@
+# Experiment 2: Adversarial Evasion Patterns
+# Tests pack coordination against sophisticated evasion algorithms
+# Visual elements: Zigzag trails, spiral patterns, evasion success/failure indicators
+
+[RADAR]
+size = 25000
+center_x = 0
+center_y = 0
+range = 25000
+
+[ENVIRONMENT]
+wind_x = 1.5
+wind_y = -1.0
+wind_z = 0.3
+gravity = 9.81
+air_density = 1.225
+turbulence = 0.2
+
+[TARGETS]
+# Different evasion pattern targets
+# Target 1: Zigzag evasion pattern
+evasive_zigzag, -4000, 5000, 1000, 100.0, -50.0, 0.0, 0, 0, 0, 3.0, zigzag_evader
+# Target 2: Spiral evasion pattern
+evasive_spiral, 6000, 3000, 1500, -80.0, -30.0, 5.0, 0, 0, 0, 3.5, spiral_evader
+# Target 3: Random walk pattern
+evasive_random, 0, -6000, 800, 50.0, 80.0, -10.0, 0, 0, 0, 3.0, random_walker
+# Target 4: Barrel roll evasion
+evasive_barrel, -5000, -5000, 2000, 90.0, 90.0, 0.0, 0, 0, 0, 4.0, barrel_roller
+
+[INTERCEPTORS]
+# 16 interceptors for 4 packs
+# Pack 1
+interceptor_1a, -500, 500, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_1
+interceptor_1b, -400, 500, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_1
+interceptor_1c, -500, 600, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_1
+interceptor_1d, -400, 600, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_1
+
+# Pack 2
+interceptor_2a, 500, 500, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_2
+interceptor_2b, 600, 500, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_2
+interceptor_2c, 500, 600, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_2
+interceptor_2d, 600, 600, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_2
+
+# Pack 3
+interceptor_3a, -500, -500, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_3
+interceptor_3b, -400, -500, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_3
+interceptor_3c, -500, -400, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_3
+interceptor_3d, -400, -400, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_3
+
+# Pack 4
+interceptor_4a, 500, -500, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_4
+interceptor_4b, 600, -500, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_4
+interceptor_4c, 500, -400, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_4
+interceptor_4d, 600, -400, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_4
+
+[PHYSICS]
+# Enhanced physics for tracking evasive targets
+green_max_acceleration = 90.0
+green_max_velocity = 260.0
+
+killer_max_acceleration = 180.0
+killer_max_velocity = 300.0
+killer_deceleration_multiplier = 4.0
+
+strike_acceleration_multiplier = 5.5
+
+drag_coefficient = 0.009
+fuel_consumption_rate = 0.18
+
+[AI_PARAMETERS]
+# Tighter formations for better evasion tracking
+pack_formation_distance = 300.0
+pack_activation_distance = 850.0
+
+# Enhanced prediction for evasive targets
+prediction_horizon = 4.0
+evasion_prediction_samples = 5
+evasion_pattern_recognition_time = 3.0
+
+# Adaptive orbit parameters
+ring_orbit_speed = 40.0
+ring_orbit_direction = 1
+green_speed_margin = 30.0
+
+strike_distance = 35.0
+cooperation_radius = 2500.0
+communication_range = 18000.0
+
+# Evasion pattern parameters
+zigzag_amplitude = 200.0
+zigzag_period = 2.0
+spiral_radius_growth = 50.0
+spiral_angular_velocity = 1.5
+random_walk_variance = 100.0
+barrel_roll_radius = 150.0
+barrel_roll_frequency = 0.5
+
+[MISSION_PARAMETERS]
+max_engagement_range = 12000.0
+role_switch_distance = 450.0
+intercept_radius = 35
+
+# Evasion tracking parameters
+pattern_lock_time = 2.5
+prediction_confidence_threshold = 0.7
+adaptive_pursuit_enable = true
+
+time_limit = 240
+threat_level = extreme
+required_kill_ratio = 1.0
+mission_success_threshold = 100

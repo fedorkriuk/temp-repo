@@ -192,6 +192,9 @@ def _apply_decisions_to_interceptors(interceptors: List[Dict], decisions: Dict[s
 
 @app.route("/")
 def index():
+    # Reset AI system on page load to prevent state persistence
+    global ai_system
+    ai_system = None
     # Requires templates/radar.html to exist
     return render_template("radar.html")
 

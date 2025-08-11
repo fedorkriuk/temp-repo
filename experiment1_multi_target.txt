@@ -1,0 +1,106 @@
+# Experiment 1: Multi-Target Scenarios with Dynamic Priority Assignment
+# This scenario demonstrates pack splitting/merging strategies when multiple threats appear
+# Visual elements: Dynamic pack formations, target prioritization visuals, split/merge animations
+
+[RADAR]
+size = 30000
+center_x = 0
+center_y = 0
+range = 30000
+
+[ENVIRONMENT]
+wind_x = 3.0
+wind_y = -2.0
+wind_z = 0.5
+gravity = 9.81
+air_density = 1.225
+turbulence = 0.15
+
+[TARGETS]
+# Multiple targets with different speeds and trajectories
+# Target 1: Fast moving threat from north
+target_1, -5000, 8000, 1200, 120.0, -80.0, -5.0, 0, 0, 0, 3.5, high_speed_threat
+# Target 2: Slow moving threat from east  
+target_2, 9000, 2000, 800, -60.0, 20.0, 10.0, 0, 0, 0, 4.0, low_speed_bomber
+# Target 3: Medium speed zigzag threat from south
+target_3, 3000, -8000, 1500, -40.0, 90.0, 0.0, 0, 0, 0, 3.0, evasive_drone
+# Target 4: Delayed high priority target (appears later)
+target_4, -9000, -5000, 2000, 100.0, 60.0, -15.0, 0, 0, 0, 5.0, priority_target
+
+[INTERCEPTORS]
+# 16 interceptor drones to form 4 packs of 4
+# Pack Alpha (Northwest)
+interceptor_a1, -1000, 1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_alpha
+interceptor_a2, -900, 1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_alpha
+interceptor_a3, -1000, 1100, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_alpha
+interceptor_a4, -900, 1100, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_alpha
+
+# Pack Bravo (Northeast)
+interceptor_b1, 1000, 1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_bravo
+interceptor_b2, 1100, 1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_bravo
+interceptor_b3, 1000, 1100, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_bravo
+interceptor_b4, 1100, 1100, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_bravo
+
+# Pack Charlie (Southwest)
+interceptor_c1, -1000, -1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_charlie
+interceptor_c2, -900, -1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_charlie
+interceptor_c3, -1000, -900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_charlie
+interceptor_c4, -900, -900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_charlie
+
+# Pack Delta (Southeast)
+interceptor_d1, 1000, -1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_delta
+interceptor_d2, 1100, -1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_delta
+interceptor_d3, 1000, -900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_delta
+interceptor_d4, 1100, -900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, pack_delta
+
+[PHYSICS]
+# Enhanced physics for dynamic multi-target scenarios
+green_max_acceleration = 80.0
+green_max_velocity = 250.0
+
+killer_max_acceleration = 160.0
+killer_max_velocity = 280.0
+killer_deceleration_multiplier = 3.5
+
+strike_acceleration_multiplier = 5.0
+
+drag_coefficient = 0.01
+fuel_consumption_rate = 0.15
+
+[AI_PARAMETERS]
+# Dynamic pack behavior parameters
+pack_formation_distance = 350.0
+pack_activation_distance = 900.0
+pack_split_threshold = 2500.0
+pack_merge_threshold = 1500.0
+
+# Priority assignment weights
+threat_priority_distance_weight = 0.4
+threat_priority_speed_weight = 0.3
+threat_priority_altitude_weight = 0.2
+threat_priority_type_weight = 0.1
+
+# Enhanced coordination
+ring_orbit_speed = 35.0
+ring_orbit_direction = 1
+green_speed_margin = 25.0
+
+strike_distance = 30.0
+cooperation_radius = 3000.0
+communication_range = 20000.0
+prediction_horizon = 3.5
+
+[MISSION_PARAMETERS]
+max_engagement_range = 15000.0
+role_switch_distance = 500.0
+intercept_radius = 30
+
+# Dynamic priority thresholds
+priority_reassignment_interval = 5.0
+critical_distance_threshold = 3000.0
+high_priority_speed_threshold = 100.0
+
+time_limit = 300
+threat_level = critical
+required_kill_ratio = 1.0
+mission_success_threshold = 100

@@ -1,0 +1,145 @@
+# Experiment 5: Energy/Resource Constraint Experiments
+# Tests efficient path planning and resource conservation strategies
+# Visual elements: Fuel gauges, efficiency indicators, return-to-base paths, energy optimization trails
+
+[RADAR]
+size = 26000
+center_x = 0
+center_y = 0
+range = 26000
+
+[ENVIRONMENT]
+wind_x = 5.0
+wind_y = -3.0
+wind_z = 1.0
+gravity = 9.81
+air_density = 1.225
+turbulence = 0.3
+# Strong headwinds affect fuel consumption
+headwind_zones = 2
+headwind_zone_1 = -5000, 0, 3000, 15.0
+headwind_zone_2 = 5000, 0, 3000, -15.0
+
+[TARGETS]
+# Long-duration targets requiring efficient pursuit
+# Target 1: Long-range patrol drone
+target_patrol, -8000, 6000, 2000, 60.0, -30.0, 0.0, 0, 0, 0, 3.5, long_range_patrol
+# Target 2: Fuel-efficient glider
+target_glider, 7000, 4000, 3000, -40.0, -20.0, -5.0, 0, 0, 0, 3.0, efficient_glider
+# Target 3: Sprint-and-drift evader
+target_sprinter, 0, -7000, 1000, 80.0, 40.0, 0.0, 0, 0, 0, 4.0, sprint_drift
+# Target 4: Endurance hoverer
+target_hover, -5000, -5000, 1500, 20.0, 20.0, 0.0, 0, 0, 0, 3.5, hovering_target
+
+[INTERCEPTORS]
+# Interceptors with varied fuel capacities and consumption rates
+# Pack 1 - Standard fuel capacity
+interceptor_s1a, -1500, 1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, standard_fuel, 100.0
+interceptor_s1b, -1400, 1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, standard_fuel, 100.0
+interceptor_s1c, -1500, 1100, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, standard_fuel, 100.0
+interceptor_s1d, -1400, 1100, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, standard_fuel, 100.0
+
+# Pack 2 - Extended range
+interceptor_e2a, 1400, 1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.5, extended_fuel, 150.0
+interceptor_e2b, 1500, 1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.5, extended_fuel, 150.0
+interceptor_e2c, 1400, 1100, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.5, extended_fuel, 150.0
+interceptor_e2d, 1500, 1100, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.5, extended_fuel, 150.0
+
+# Pack 3 - Efficient engines
+interceptor_f3a, -1500, -1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, efficient_engine, 100.0
+interceptor_f3b, -1400, -1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, efficient_engine, 100.0
+interceptor_f3c, -1500, -900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, efficient_engine, 100.0
+interceptor_f3d, -1400, -900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 2.0, efficient_engine, 100.0
+
+# Pack 4 - Sprint capable (high consumption)
+interceptor_p4a, 1400, -1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 1.8, sprint_capable, 80.0
+interceptor_p4b, 1500, -1000, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 1.8, sprint_capable, 80.0
+interceptor_p4c, 1400, -900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 1.8, sprint_capable, 80.0
+interceptor_p4d, 1500, -900, 1000, 0.0, 0.0, 0.0, 0, 0, 0, 1.8, sprint_capable, 80.0
+
+[PHYSICS]
+# Fuel consumption parameters
+base_fuel_consumption_rate = 0.1
+acceleration_fuel_multiplier = 2.5
+velocity_fuel_multiplier = 1.5
+altitude_fuel_modifier = 0.8
+headwind_fuel_penalty = 1.8
+
+# Type-specific consumption rates
+standard_consumption_rate = 1.0
+extended_consumption_rate = 0.9
+efficient_consumption_rate = 0.6
+sprint_consumption_rate = 1.5
+
+# Energy-efficient physics
+green_max_acceleration = 70.0
+green_max_velocity = 230.0
+
+killer_max_acceleration = 140.0
+killer_max_velocity = 260.0
+killer_deceleration_multiplier = 3.0
+
+# Gliding parameters
+glide_ratio = 15.0
+min_glide_speed = 50.0
+glide_fuel_consumption = 0.1
+
+strike_acceleration_multiplier = 4.5
+
+drag_coefficient = 0.012
+fuel_weight_ratio = 0.3
+
+[AI_PARAMETERS]
+# Energy management parameters
+fuel_critical_threshold = 20.0
+fuel_bingo_threshold = 30.0
+fuel_conservative_threshold = 50.0
+
+# Efficiency optimization
+optimal_cruise_speed = 180.0
+formation_draft_benefit = 0.85
+altitude_optimization = true
+route_optimization = true
+
+# Energy-aware behaviors
+energy_prediction_horizon = 10.0
+rtb_safety_margin = 1.2
+pursuit_efficiency_weight = 0.7
+intercept_probability_threshold = 0.6
+
+pack_formation_distance = 380.0
+pack_activation_distance = 1000.0
+strike_distance = 30.0
+
+# Fuel sharing (for visualization)
+fuel_transfer_capable = false
+emergency_fuel_reserve = 5.0
+
+ring_orbit_speed = 25.0
+ring_orbit_direction = 1
+green_speed_margin = 15.0
+
+cooperation_radius = 3000.0
+communication_range = 18000.0
+prediction_horizon = 4.0
+
+[MISSION_PARAMETERS]
+max_engagement_range = 10000.0
+role_switch_distance = 400.0
+intercept_radius = 30
+
+# Energy mission parameters
+mission_duration = 300.0
+refuel_stations = 0
+energy_efficiency_score_weight = 0.4
+successful_rtb_required = true
+
+# Pursuit authorization based on fuel
+min_fuel_for_pursuit = 40.0
+min_fuel_for_strike = 25.0
+abort_pursuit_fuel = 15.0
+
+time_limit = 300
+threat_level = moderate
+required_kill_ratio = 0.8
+mission_success_threshold = 80
